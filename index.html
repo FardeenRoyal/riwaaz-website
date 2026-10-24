@@ -2072,6 +2072,22 @@ function toast(msg){
 /* ============ LOAD REAL DATA FROM SUPABASE ============ */
 /* ============ ANALYTICS ============ */
 function logAnalyticsEvent(eventType, productId, quantity){
+  try{
+  if(typeof fbq==='function' && productId){
+    const t = String(eventType||'').toLowerCase();
+    const id = String(productId);
+    const p = (typeof PRODUCTS!=='undefined' ? PRODUCTS : []).find(x=>String(x.id)===id);
+    const d = {content_ids:[id], content_type:'product', currency:'INR'};
+    if(p){ d.content_name = p.name; d.value = Number(p.price)||0; }
+    if(t.includes('purchase') || t.includes('remove')){
+      // Purchase alag se track hota hai, double count nahi karna
+    } else if(t.includes('cart')){
+      fbq('track','AddToCart',d);
+    } else if(t.includes('view')){
+      fbq('track','ViewContent',d);
+    }
+  }
+}catch(e){}
   // Fire-and-forget — never blocks the UI, and errors are silently ignored
   db.from('analytics_events').insert([{ event_type: eventType, product_id: productId || null, quantity: quantity || 1 }])
     .then(()=>{}, (err)=>console.warn('Analytics log failed', err));

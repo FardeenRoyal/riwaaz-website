@@ -1286,7 +1286,15 @@ async function placeOrder(e){
     const { error } = await db.from('orders').insert([orderRow]);
     if(error) throw error;
     state.cart.forEach(c=>logAnalyticsEvent('purchase', c.id, c.qty));
-
+    if(typeof fbq==='function'){
+  fbq('track','Purchase',{
+    value: Number(orderRow.total)||0,
+    currency: 'INR',
+    content_type: 'product',
+    content_ids: state.cart.map(c=>String(c.id)),
+    num_items: state.cart.reduce((s,c)=>s+(c.qty||1),0)
+  },{eventID: orderCode});
+  }
     // Auto-save address to the account: first-ever address becomes default automatically,
     // or if the customer ticked "save this address" on a new entry.
     if(currentUser && selectedAddressId==='new'){
